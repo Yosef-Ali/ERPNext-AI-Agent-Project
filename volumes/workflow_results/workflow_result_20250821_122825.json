@@ -1,0 +1,32 @@
+{
+  "task": "Design a customer management system with order tracking and invoicing capabilities",
+  "timestamp": "2025-08-21T12:28:25.173104",
+  "agent_results": [
+    {
+      "agent": "erpnext-architect",
+      "task": "Design a customer management system with order tracking and invoicing capabilities",
+      "status": "completed",
+      "architecture_components": [],
+      "integration_points": [],
+      "scalability_considerations": [
+        "Database indexing strategy",
+        "Caching implementation",
+        "Background job queues",
+        "Performance monitoring"
+      ]
+    }
+  ],
+  "final_deliverables": {
+    "requirements": [],
+    "architecture": [],
+    "database_design": [],
+    "implementation_guide": [
+      "1. Create DocTypes with specified fields",
+      "2. Set up workflows and approval processes",
+      "3. Configure user permissions and roles",
+      "4. Test with sample data",
+      "5. Deploy to production with monitoring"
+    ]
+  },
+  "status": "completed"
+}

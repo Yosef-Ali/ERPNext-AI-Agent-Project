@@ -1,0 +1,27 @@
+{
+  "timestamp": "2025-08-21 12:27:12",
+  "erpnext_status": {
+    "available": false,
+    "url": null
+  },
+  "integration_components": {
+    "erpnext_connector": false,
+    "document_indexer": true,
+    "knowledge_graph": true,
+    "chromadb_status": {
+      "available": true,
+      "collections_count": 0,
+      "collections": []
+    },
+    "errors": [
+      "ERPNext connection failed: {'connected': False, 'method': None, 'details': {}, 'instances_found': []}"
+    ]
+  },
+  "end_to_end_test": false,
+  "recommendations": [
+    "Start ERPNext instance to enable data integration",
+    "Fix ERPNext connector to enable data access",
+    "Run document indexing to populate ChromaDB",
+    "Address integration errors listed above"
+  ]
+}

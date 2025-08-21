@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  # ERPNext Development Environment
+  erpnext:
+    image: frappe/erpnext:latest
+    container_name: erpnext-dev
+    ports:
+      - "8000:8000"
+      - "9000:9000"
+    environment:
+      - SITE_NAME=localhost
+      - DB_HOST=mariadb
+      - REDIS_CACHE=redis:6379/0
+      - REDIS_QUEUE=redis:6379/1
+      - REDIS_SOCKETIO=redis:6379/2
+    volumes:
+      - erpnext_sites:/home/frappe/frappe-bench/sites
+      - erpnext_logs:/home/frappe/frappe-bench/logs
+    depends_on:
+      - mariadb
+      - redis
+    networks:
+      - erpnext-ai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/method/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MariaDB Database
+  mariadb:
+    image: mariadb:10.6
+    container_name: erpnext-mariadb
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-admin123}
+      - MYSQL_DATABASE=erpnext_db
+      - MYSQL_USER=erpnext
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-erpnext123}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./mariadb/conf.d:/etc/mysql/conf.d
+    ports:
+      - "3306:3306"
+    networks:
+      - erpnext-ai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache and Queue
+  redis:
+    image: redis:7-alpine
+    container_name: erpnext-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - erpnext-ai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ChromaDB Vector Database
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: erpnext-chromadb
+    ports:
+      - "8001:8000"
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+      - PERSIST_DIRECTORY=/chroma/chroma
+    volumes:
+      - chroma_data:/chroma/chroma
+    networks:
+      - erpnext-ai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3  # Neo4j Knowledge Graph Database
+  neo4j:
+    image: neo4j:5
+    container_name: erpnext-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=${NEO4J_AUTH:-neo4j/erpnext123}
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_apoc_import_file_use__neo4j__config=true
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - neo4j_plugins:/plugins
+    networks:
+      - erpnext-ai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "${NEO4J_PASSWORD:-erpnext123}", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# Volumes
+volumes:
+  erpnext_sites:
+    driver: local
+  erpnext_logs:
+    driver: local
+  mariadb_data:
+    driver: local
+  redis_data:
+    driver: local
+  chroma_data:
+    driver: local
+  neo4j_data:
+    driver: local
+  neo4j_logs:
+    driver: local
+  neo4j_import:
+    driver: local
+  neo4j_plugins:
+    driver: local
+
+# Networks
+networks:
+  erpnext-ai:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
